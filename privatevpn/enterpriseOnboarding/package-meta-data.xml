@@ -1,0 +1,25 @@
+<ncs-package xmlns="http://tail-f.com/ns/ncs-packages">
+  <name>enterpriseOnboard</name>
+  <package-version>4.2.3.0</package-version>
+  <description>Service Implementing 3 tier architecture design pattern</description>
+  <ncs-min-version>3.0</ncs-min-version>
+
+  <!-- It's possible to add more components to the -->
+  <!-- same package, multiple services, data providers etc -->
+  
+<component>
+    <name>customerVrf</name>
+    <callback>
+      <java-class-name>com.vzw.mpn.enterpriseOnboard.CustomerVrfRFS</java-class-name>
+    </callback>
+  </component>
+
+  <component>
+    <name>customerVrfApi</name>
+    <callback>
+      <java-class-name>com.vzw.mpn.enterpriseOnboard.CustomerVrfApi</java-class-name>
+    </callback>
+  </component>
+
+
+</ncs-package>

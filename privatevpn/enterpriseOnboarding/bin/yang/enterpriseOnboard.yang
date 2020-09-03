@@ -1,0 +1,318 @@
+module enterpriseOnboard {
+
+  namespace "http://com/mobileprivate/network/enterpriseOnboard";
+  prefix enterpriseOnboard;
+
+  import ietf-inet-types {
+    prefix inet;
+  }
+
+  import tailf-common {
+    prefix tailf;
+  }
+
+  import tailf-ncs {
+    prefix ncs;
+  }
+
+   organization "NSO Training in Dallas\Richardson by Cisco Advanced Services";
+
+  description
+    "This module contains a collection of YANG definitions for defining the service models.";
+  
+  revision 2016-09-21 {
+    description
+      "Added support for  new services that have been developed ";
+  }
+
+  revision 2015-05-08 {
+    description 
+      "Added support intial actions for exiting services";
+  }
+  revision 2015-03-20 {
+    description
+      "Initial version";
+  }
+
+  typedef mpn-action-type {
+    type enumeration {
+      enum QueryRequest;
+      enum CreateRequest;
+      enum ModifyRequest;
+      enum DeleteRequest;
+      enum CreateDiffRequest;
+      enum ModifyDiffRequest;
+      enum DeleteDiffRequest;
+    }
+  }
+  
+  typedef revert-action-type {
+    type enumeration {
+      enum RevertQuery;
+      enum RevertOnboard;
+      enum RevertModify;
+      enum RevertDelete;
+      enum RevertNone;
+    }
+  }
+
+  // Groupings
+
+  grouping common-hdr {
+    leaf request-id {
+      tailf:info "Identifier for the request from ECM";
+      type string;
+      mandatory true;
+    }
+    leaf request-action {
+      tailf:info "action indicator for this service instance";
+      type mpn-action-type;
+    }
+    leaf device {
+      tailf:info "Device which VASI interface will be configured";
+      type leafref {
+        path "/ncs:devices/ncs:device/ncs:name";
+      }
+    }
+  }
+
+  grouping common-error-format {
+    leaf code {
+      tailf:info "Error code";
+      type int32;
+    }
+    leaf message {
+      tailf:info "Error text describing the API error occurance";
+      type string;
+    }
+    leaf diff-output {
+      tailf:info "Commit dry-run native output";
+      type string;
+    }
+  }
+
+  /////////////////////////////////////////////////////
+  // MPN API
+  /////////////////////////////////////////////////////
+
+
+  container mpn-api {
+    config false;
+    tailf:info "MPN API invocation actions";
+
+  tailf:action rollback-sel {
+    tailf:exec "./packages/enterpriseOnboard/scripts/rollback_sel.sh" {
+       tailf:wd ".";
+    }
+    input {
+      leaf rb-nr {
+        type uint32;
+      }
+    }
+    output {
+      leaf result {
+        type string;
+      }
+    }
+  }
+
+    /////////////////////////////////////////////////////
+    //  WORKFLOW REVERT API
+    /////////////////////////////////////////////////////
+
+    tailf:action workflow-revert-actions {
+      tailf:actionpoint workflow-revert-action-point;
+      input {
+        // uses common-hdr;
+        leaf request-id {
+          tailf:info "Identifier for the request from ECM";
+          type string;
+          mandatory true;
+        }
+        leaf request-action {
+          type revert-action-type;
+          mandatory true;
+        }
+        leaf revert-id {
+          tailf:info "Identifier for the revert request from ECM";
+          type string;
+          mandatory true;
+        }
+      }
+      output {
+        leaf request-id {
+          type string;
+        }
+        leaf request-action {
+          type revert-action-type;
+        }
+        leaf revert-id {
+          type string;
+        }
+        leaf revert-service-list {
+          type string;
+        }
+        uses common-error-format;
+      }
+    }
+
+
+    /////////////////////////////////////////////////////
+    //  Customer VRF API
+    /////////////////////////////////////////////////////
+
+    tailf:action customer-vrf-actions {
+      tailf:actionpoint customer-vrf-action-point;
+      input {
+
+        uses common-hdr;
+
+        leaf customer-id {
+          tailf:info "Unique customer id";
+          //type uint32;
+	  type string;
+        }
+        leaf customer-name {
+          type string;
+        }
+        leaf rd {
+          type uint32;
+        }
+        leaf rt-export {
+          type uint32;
+        }
+        /*leaf rt-import {
+          type uint32;
+        }*/
+
+        leaf-list rt-import {
+          type uint32;
+        }
+        leaf no-cpe {
+          type enumeration {
+            enum yes;
+            enum no;
+           }
+        }
+      }
+      output {
+        uses common-hdr;
+
+        leaf customer-id {
+          tailf:info "Unique customer id";
+          //type uint32;
+	    type string;
+        }
+        leaf customer-name {
+          type string;
+        }
+        leaf rd {
+          type uint32;
+        }
+        leaf rt-export {
+          type uint32;
+        }
+        /*leaf rt-import {
+          type uint32;
+        }*/
+
+        leaf-list rt-import {
+          type uint32;
+        }
+        leaf no-cpe {
+          type enumeration {
+            enum yes;
+            enum no;
+           }
+        }
+        uses common-error-format;
+      }
+    }    
+
+
+  } // End API Layer
+
+ /////////////////////////////////////////////////////
+  // SERVICES REVERT TABLE 
+  /////////////////////////////////////////////////////
+
+  list workflow-revert {
+    //config false;
+    key "request-id";
+    leaf request-id {
+       type string;
+    }
+    list rollback {
+      key "rollback-id";
+      leaf rollback-id {
+        type string;
+      }
+      leaf action {
+        type mpn-action-type;
+      }
+      leaf service {
+        type string;
+      }
+      leaf date {
+        type string;
+      }
+      leaf customer-id {
+        type string;
+      }
+    }
+  }
+ 
+
+
+   /////////////////////////////////////////////////////
+  // SERVICE MODELS 
+  /////////////////////////////////////////////////////
+ 
+  augment /ncs:services {
+    
+    list customer-vrf {
+      description "This service to create customer vrf";
+
+      key "customer-id device";
+      leaf customer-id {
+        tailf:info "Unique customer id";
+        type string;
+      }
+      leaf device {
+        tailf:info "Device which VRF will be configured";
+          type string;
+    /*    type leafref {
+          path "/ncs:devices/ncs:device/ncs:name";
+        } */
+      }
+      uses ncs:service-data;
+      ncs:servicepoint customer-vrf-servicepoint;
+      leaf-list request-id {
+        type string;
+      }
+      leaf customer-name {
+        type string;
+      }
+      leaf rd {
+        type uint32;
+      }
+      leaf rt-export {
+        type uint32;
+      }
+      /*leaf rt-import {
+        type uint32;
+      }*/
+      leaf-list rt-import {
+          type uint32;
+        }
+      leaf no-cpe {
+          type enumeration {
+            enum yes;
+            enum no;
+           }
+       }
+    } // customer-vrf
+
+  } // End Service Models
+}
+

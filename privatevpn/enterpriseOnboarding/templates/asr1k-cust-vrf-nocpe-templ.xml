@@ -1,0 +1,61 @@
+<config-template xmlns="http://tail-f.com/ns/config/1.0">
+ <devices xmlns="http://tail-f.com/ns/ncs">
+    <device>
+	<name>{$DEVICE}</name>
+      	<config>
+  <ip xmlns="urn:ios">
+    <vrf>
+      <name>MPN{$CUST-ID}</name>
+      <description>{$CUST-NAME}</description>
+      <route-target>
+      <export>
+        <asn-ip>22394:{$RT-EXPORT}</asn-ip>
+      </export>
+     </route-target>
+     <route-target>
+      <import>
+        <asn-ip>22394:{$RT-IMPORT}</asn-ip>
+      </import>
+     </route-target>
+      <rd>22394:{$RD-VAL}</rd>
+    </vrf>
+    <route>
+      <vrf>
+        <name>MPN{$CUST-ID}</name>
+        <ip-route-interface-list>
+          <prefix>0.0.0.0</prefix>
+          <mask>0.0.0.0</mask>
+          <interface>Null0</interface>
+        </ip-route-interface-list>
+      </vrf>
+    </route>
+  </ip>
+  <router xmlns="urn:ios">
+    <bgp>
+      <as-no>6167</as-no>
+      <address-family>
+        <with-vrf>
+          <ipv4>
+           <af>unicast</af>
+            <vrf>
+              <name>MPN{$CUST-ID}</name>
+              <network>
+                <number>0.0.0.0</number>
+              </network>
+              <!-- added by lohias on Feb 16 2016, to fix MPN issue # 20 -->
+              <maximum-paths>
+                <paths>
+                  <number-of-paths>2</number-of-paths>
+                </paths>
+              </maximum-paths>
+            </vrf>
+          </ipv4>
+        </with-vrf>
+      </address-family>
+    </bgp>
+  </router>
+     </config>
+   </device>
+  </devices>
+</config-template>
+
